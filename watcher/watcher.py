@@ -11,12 +11,9 @@ class CodeChangeHandler(FileSystemEventHandler):
         self.cfg = cfg
 
     def on_modified(self, event):
-        print(f"DEBUG: Event detected - Type: {event.event_type}, Path: {event.src_path}, Is directory: {event.is_directory}")
         if event.is_directory or not event.src_path.endswith(self.cfg["WATCH_EXTENSIONS"]):
-            print(f"DEBUG: Skipping event - Directory or invalid extension: {event.src_path}")
             return
         if any(ignored in event.src_path for ignored in self.cfg["IGNORE_DIRS"]):
-            print(f"DEBUG: Skipping event - Ignored directory: {event.src_path}")
             return
 
         relative_path = os.path.relpath(event.src_path, self.cfg["WATCH_DIR"])
