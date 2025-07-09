@@ -1,0 +1,16 @@
+watch_dir: ${WATCH_DIR}
+project_name: ${PROJECT_NAME}
+chunk_size: 20
+
+watch_extensions:
+  - .py
+  - .ts
+  - .tsx
+  - .php
+  - .json
+  - .sh
+
+ignore_dirs:
+  - .git
+  - node_modules
+  - __pycache__
