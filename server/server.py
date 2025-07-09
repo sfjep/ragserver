@@ -1,11 +1,11 @@
 import os
 import uuid
 import hashlib
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import Distance, VectorParams
+from qdrant_client.http.models import Distance, VectorParams, Filter, FieldCondition, MatchValue
 
 app = FastAPI()
 model = SentenceTransformer("intfloat/e5-small-v2")
@@ -50,3 +50,16 @@ def embed(req: EmbedRequest):
     )
 
     return {"status": "stored"}
+
+@app.delete("/embed")
+def delete_file_embeddings(file: str = Query(..., description="Relative path to the file to delete chunks for")):
+    if not file:
+        raise HTTPException(status_code=400, detail="Missing file path")
+
+    qdrant.delete(
+        collection_name=COLLECTION_NAME,
+        points_selector=Filter(
+            must=[FieldCondition(key="file", match=MatchValue(value=file))]
+        )
+    )
+    return {"status": f"Deleted all chunks for file: {file}"}

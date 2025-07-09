@@ -9,6 +9,8 @@ watch_extensions:
   - .php
   - .json
   - .sh
+  - .yml
+  - .md
 
 ignore_dirs:
   - .git

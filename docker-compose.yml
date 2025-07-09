@@ -2,7 +2,6 @@ services:
   server:
     build:
       context: .
-    container_name: rag-server
     ports:
       - "8001:8000"
     env_file:
@@ -16,7 +15,7 @@ services:
     build:
       context: .
     container_name: rag-watcher
-    command: ["python", "-m", "watcher.watcher"]
+    command: ["python", "-u", "-m", "watcher.watcher"]
     env_file:
       - .env
     volumes:

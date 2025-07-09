@@ -11,30 +11,61 @@ class CodeChangeHandler(FileSystemEventHandler):
         self.cfg = cfg
 
     def on_modified(self, event):
+        print(f"DEBUG: Event detected - Type: {event.event_type}, Path: {event.src_path}, Is directory: {event.is_directory}")
         if event.is_directory or not event.src_path.endswith(self.cfg["WATCH_EXTENSIONS"]):
+            print(f"DEBUG: Skipping event - Directory or invalid extension: {event.src_path}")
             return
         if any(ignored in event.src_path for ignored in self.cfg["IGNORE_DIRS"]):
+            print(f"DEBUG: Skipping event - Ignored directory: {event.src_path}")
             return
 
-        print(f"📄 Changed: {event.src_path}")
-        try:
-            with open(event.src_path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
+        relative_path = os.path.relpath(event.src_path, self.cfg["WATCH_DIR"])
+        print(f"📄 Changed: {relative_path}")
 
-            for i in range(0, len(lines), self.cfg["CHUNK_SIZE"]):
-                text = "".join(lines[i:i+self.cfg["CHUNK_SIZE"]]).strip()
-                if text:
-                    metadata = {
-                        "project": self.cfg["PROJECT_NAME"],
-                        "file": os.path.relpath(event.src_path, self.cfg["WATCH_DIR"]),
-                        "line": i + 1
-                    }
-                    requests.post(
-                        self.cfg["EMBED_SERVER_URL"],
-                        json={"text": text, "metadata": metadata}
-                    )
+        try:
+            self.delete_existing_embeddings(relative_path)
+            self.upload_chunks(event.src_path, relative_path)
         except Exception as e:
-            print(f"❌ Failed to read/send file: {e}")
+            print(f"❌ Error processing {relative_path}: {e}")
+
+
+    def delete_existing_embeddings(self, relative_path: str):
+        try:
+            res = requests.delete(
+                self.cfg["EMBED_SERVER_URL"],
+                params={"file": relative_path}
+            )
+            if res.status_code != 200:
+                print(f"⚠️ Failed to delete embeddings: {res.text}")
+            else:
+                print(f"✅ Deleted existing embeddings for {relative_path}")
+        except Exception as e:
+            print(f"❌ DELETE failed for {relative_path}: {e}")
+
+    def upload_chunks(self, full_path: str, relative_path: str):
+        with open(full_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        for i in range(0, len(lines), self.cfg["CHUNK_SIZE"]):
+            chunk = "".join(lines[i:i + self.cfg["CHUNK_SIZE"]]).strip()
+            if not chunk:
+                continue
+
+            metadata = {
+                "project": self.cfg["PROJECT_NAME"],
+                "file": relative_path,
+                "line": i + 1
+            }
+
+            try:
+                res = requests.post(
+                    self.cfg["EMBED_SERVER_URL"],
+                    json={"text": chunk, "metadata": metadata}
+                )
+                if res.status_code != 200:
+                    print(f"⚠️ Failed to embed chunk {relative_path}:{i + 1}")
+            except Exception as e:
+                print(f"❌ POST failed for chunk {relative_path}:{i + 1}: {e}")
 
 
 def start():
