@@ -33,6 +33,7 @@ You configure the system using:
 WATCH_DIR=/mnt/home/yourname/code/yourproject
 COLLECTION_NAME=yourproject_embeddings
 PROJECT_NAME=yourproject
+EMBED_SERVER_URL=http://server:8000/embed
 ```
 
 ### `ragconfig.yml`
@@ -62,6 +63,7 @@ ignore_dirs:
 
 - The **watcher** monitors your target directory (`WATCH_DIR`)
 - When a tracked file is modified, it:
+  - Deletes all previous embeddings for that file
   - Chunks its contents (default 20 lines per chunk)
   - Embeds each chunk using `intfloat/e5-small-v2`
   - Sends it to the **RAG server**, which stores it in Qdrant
@@ -74,7 +76,7 @@ ignore_dirs:
 - `watcher`: Python daemon that watches your project folder and triggers embeds
 - `qdrant`: Vector database where the chunks are stored
 
-All run in isolated containers and communicate over Docker network.
+All run in isolated containers and communicate over Docker network using service names.
 
 ---
 
@@ -100,5 +102,3 @@ Each embedded chunk is stored in Qdrant with metadata:
 - Let agents retrieve project-specific context from Qdrant
 - Works for any project by updating `.env` and `ragconfig.yml`
 - Avoids storing non-source files and third-party code by respecting ignored dirs/extensions
-
----
