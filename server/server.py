@@ -1,10 +1,11 @@
 import os
+import uuid
+import hashlib
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
-import uuid
 
 app = FastAPI()
 model = SentenceTransformer("intfloat/e5-small-v2")
@@ -20,6 +21,9 @@ class EmbedRequest(BaseModel):
     text: str
     metadata: dict = {}
 
+def chunk_id(file: str, line: int) -> str:
+    return hashlib.md5(f"{file}:{line}".encode()).hexdigest()
+
 @app.get("/")
 def root():
     return {"message": "RAG server is running"}
@@ -34,10 +38,12 @@ def embed(req: EmbedRequest):
         input_text = "passage: " + input_text
 
     embedding = model.encode(input_text).tolist()
+    file = req.metadata.get("file", "unknown")
+    line = req.metadata.get("line", 0)
     qdrant.upsert(
         collection_name=COLLECTION_NAME,
         points=[{
-            "id": str(uuid.uuid4()),
+            "id": chunk_id(file, line),
             "vector": embedding,
             "payload": req.metadata
         }]
