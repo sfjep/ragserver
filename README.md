@@ -30,7 +30,7 @@ You configure the system using:
 ### `.env`
 
 ```env
-WATCH_DIR=/mnt/home/yourname/code/yourproject
+WATCH_DIR=/home/yourname/code/yourproject
 COLLECTION_NAME=yourproject_embeddings
 PROJECT_NAME=yourproject
 EMBED_SERVER_URL=http://server:8000/embed
