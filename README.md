@@ -17,7 +17,8 @@ git clone <this-repo> rag
 cd rag
 cp .env.example .env
 cp ragconfig.example.yml ragconfig.yml
-docker compose up --build
+./build.sh
+./start.sh
 ```
 
 ---
